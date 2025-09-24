@@ -39,12 +39,31 @@ jobs:
         name: seen-posts-storage
         path: .
 
+    - name: Check if storage file was downloaded
+      run: |
+        if [ -f "seen_posts.json" ]; then
+          echo "Storage file found, posts will be filtered"
+          ls -la seen_posts.json
+        else
+          echo "No storage file found, initializing..."
+          echo "INITIALIZE_STORAGE=true" >> $GITHUB_ENV
+        fi
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Initialize storage (first run only)
+      if: env.INITIALIZE_STORAGE == 'true'
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      run: |
+        echo "First run detected - initializing storage without notifications"
+        python main.py init
+
     - name: Run MapleSEA updates check
+      if: env.INITIALIZE_STORAGE != 'true'
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         CHECK_INTERVAL_MINUTES: 5
