@@ -37,7 +37,7 @@ git push -u origin main
 1. In your repository, go to **Settings** → **Secrets and variables** → **Actions**
 2. Click **"New repository secret"**
 3. Name: `DISCORD_WEBHOOK_URL`
-4. Value: `https://discord.com/api/webhooks/1420396666661507137/iCBawWybm-GQlQNENYqA5AxbdzWjf190NCYlkMCriZ-IJa3Oc5syVidZruZ2twk_Q_uO`
+4. Value: `redacted`
 5. Click **"Add secret"**
 
 ### 4. Enable GitHub Actions
