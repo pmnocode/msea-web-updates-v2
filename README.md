@@ -30,8 +30,7 @@ A Python tool that monitors the MapleSEA updates page for new posts and sends Di
 
    - Edit `.env` and add your Discord webhook URL:
      ```
-     DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
-     CHECK_INTERVAL_MINUTES=30
+     REDACTED
      ```
 
 3. **Initialize the watcher**:
