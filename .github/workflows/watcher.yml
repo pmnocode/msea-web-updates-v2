@@ -76,4 +76,4 @@ jobs:
       with:
         name: seen-posts-storage
         path: seen_posts.json
-        retention-days: 360
+        retention-days: 90
