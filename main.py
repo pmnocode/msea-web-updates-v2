@@ -7,7 +7,7 @@ from datetime import datetime
 from scraper import MapleSEAScraper
 from storage import PostStorage
 from discord_notifier import DiscordNotifier
-from config import MAPLESEA_UPDATES_URL, DISCORD_WEBHOOK_URL, CHECK_INTERVAL_MINUTES, SEEN_POSTS_FILE
+from config import MAPLESEA_URLS, DISCORD_WEBHOOK_URL, CHECK_INTERVAL_MINUTES, SEEN_POSTS_FILE
 
 # Configure logging
 logging.basicConfig(
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class UpdatesWatcher:
     def __init__(self):
-        self.scraper = MapleSEAScraper(MAPLESEA_UPDATES_URL)
+        self.scrapers = [MapleSEAScraper(url) for url in MAPLESEA_URLS]
         self.storage = PostStorage(SEEN_POSTS_FILE)
         self.notifier = DiscordNotifier(DISCORD_WEBHOOK_URL)
 
@@ -32,23 +32,28 @@ class UpdatesWatcher:
         logger.info("Checking for updates...")
 
         try:
-            # Get current updates from the website
-            current_updates = self.scraper.get_updates()
+            all_new_posts = []
 
-            if not current_updates:
-                logger.warning("No updates found or error occurred while scraping")
-                return
+            # Check each URL for updates
+            for scraper in self.scrapers:
+                # Get current updates from the website
+                current_updates = scraper.get_updates()
 
-            # Filter out already seen posts
-            new_posts = self.storage.get_new_posts(current_updates)
+                if not current_updates:
+                    logger.warning(f"No updates found or error occurred while scraping {scraper.base_url}")
+                    continue
 
-            if new_posts:
-                logger.info(f"Found {len(new_posts)} new post(s):")
-                for post in new_posts:
+                # Filter out already seen posts
+                new_posts = self.storage.get_new_posts(current_updates)
+                all_new_posts.extend(new_posts)
+
+            if all_new_posts:
+                logger.info(f"Found {len(all_new_posts)} new post(s):")
+                for post in all_new_posts:
                     logger.info(f"  - [{post['date']}] {post['title']}")
 
                 # Send Discord notification
-                self.notifier.send_notification(new_posts)
+                self.notifier.send_notification(all_new_posts)
             else:
                 logger.info("No new updates found")
 
@@ -58,10 +63,11 @@ class UpdatesWatcher:
     def initialize_storage(self):
         """Initialize storage with current posts to avoid spam on first run."""
         logger.info("Initializing storage with current posts...")
-        current_updates = self.scraper.get_updates()
-        if current_updates:
-            self.storage.mark_posts_as_seen(current_updates)
-            logger.info(f"Marked {len(current_updates)} existing posts as seen")
+        for scraper in self.scrapers:
+            current_updates = scraper.get_updates()
+            if current_updates:
+                self.storage.mark_posts_as_seen(current_updates)
+                logger.info(f"Marked {len(current_updates)} existing posts as seen from {scraper.base_url}")
 
     def test_webhook(self):
         """Test the Discord webhook."""
