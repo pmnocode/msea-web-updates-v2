@@ -50,7 +50,7 @@ class DiscordNotifier:
                 updated_count = len(embed_batch) - new_count
 
                 # Create appropriate message content
-                content_parts = []
+                content_parts = ["@everyone"]
                 if new_count > 0:
                     content_parts.append(f"🍁 **{new_count} New MapleSEA Update{'s' if new_count > 1 else ''}!**")
                 if updated_count > 0:
@@ -58,7 +58,10 @@ class DiscordNotifier:
 
                 payload = {
                     "content": " ".join(content_parts),
-                    "embeds": embed_batch
+                    "embeds": embed_batch,
+                    "allowed_mentions": {
+                        "parse": ["everyone"]
+                    }
                 }
 
                 response = requests.post(
