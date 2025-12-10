@@ -7,7 +7,7 @@ from datetime import datetime
 from scraper import MapleSEAScraper
 from storage import PostStorage
 from discord_notifier import DiscordNotifier
-from config import MAPLESEA_URLS, DISCORD_WEBHOOK_URL, CHECK_INTERVAL_MINUTES, SEEN_POSTS_FILE
+from config import MAPLESEA_URLS, DISCORD_WEBHOOK_URLS, CHECK_INTERVAL_MINUTES, SEEN_POSTS_FILE
 
 # Configure logging
 logging.basicConfig(
@@ -25,7 +25,7 @@ class UpdatesWatcher:
     def __init__(self):
         self.scrapers = [MapleSEAScraper(url) for url in MAPLESEA_URLS]
         self.storage = PostStorage(SEEN_POSTS_FILE)
-        self.notifier = DiscordNotifier(DISCORD_WEBHOOK_URL)
+        self.notifiers = [DiscordNotifier(url) for url in DISCORD_WEBHOOK_URLS]
 
     def check_for_updates(self):
         """Check for new updates and send notifications if found."""
@@ -52,8 +52,9 @@ class UpdatesWatcher:
                 for post in all_new_posts:
                     logger.info(f"  - [{post['date']}] {post['title']}")
 
-                # Send Discord notification
-                self.notifier.send_notification(all_new_posts)
+                # Send Discord notification to all webhooks
+                for notifier in self.notifiers:
+                    notifier.send_notification(all_new_posts)
             else:
                 logger.info("No new updates found")
 
@@ -70,9 +71,10 @@ class UpdatesWatcher:
                 logger.info(f"Marked {len(current_updates)} existing posts as seen from {scraper.base_url}")
 
     def test_webhook(self):
-        """Test the Discord webhook."""
-        logger.info("Testing Discord webhook...")
-        return self.notifier.test_webhook()
+        """Test the Discord webhooks."""
+        logger.info("Testing Discord webhooks...")
+        results = [notifier.test_webhook() for notifier in self.notifiers]
+        return all(results)
 
     def run_once(self):
         """Run a single check for updates."""
@@ -80,7 +82,7 @@ class UpdatesWatcher:
 
     def run_scheduler(self):
         """Run the scheduled watcher."""
-        if not DISCORD_WEBHOOK_URL:
+        if not DISCORD_WEBHOOK_URLS:
             logger.error("Discord webhook URL not configured! Please set DISCORD_WEBHOOK_URL in your .env file or GitHub secret")
             return
 
