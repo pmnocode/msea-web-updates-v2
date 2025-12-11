@@ -51,6 +51,7 @@ jobs:
       if: env.INITIALIZE_STORAGE == 'true'
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        DISCORD_WEBHOOK_URL_2: ${{ secrets.DISCORD_WEBHOOK_URL_2 }}
       run: |
         echo "First run detected - initializing storage without notifications"
         python main.py init
@@ -59,6 +60,7 @@ jobs:
       if: env.INITIALIZE_STORAGE != 'true'
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        DISCORD_WEBHOOK_URL_2: ${{ secrets.DISCORD_WEBHOOK_URL_2 }}
         CHECK_INTERVAL_MINUTES: 5
       run: |
         python main.py check
