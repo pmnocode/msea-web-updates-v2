@@ -32,16 +32,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Download previous storage file
-      uses: dawidd6/action-download-artifact@v3
-      continue-on-error: true
-      with:
-        name: seen-posts-storage
-        path: .
-        workflow: watcher.yml
-        if_no_artifact_found: ignore
-
-    - name: Check if storage file was downloaded
+    - name: Check if storage file exists
       run: |
         if [ -f "seen_posts.json" ]; then
           echo "Storage file found, posts will be filtered"
@@ -60,6 +51,7 @@ jobs:
       if: env.INITIALIZE_STORAGE == 'true'
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        DISCORD_WEBHOOK_URL_2: ${{ secrets.DISCORD_WEBHOOK_URL_2 }}
       run: |
         echo "First run detected - initializing storage without notifications"
         python main.py init
@@ -68,14 +60,22 @@ jobs:
       if: env.INITIALIZE_STORAGE != 'true'
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        DISCORD_WEBHOOK_URL_2: ${{ secrets.DISCORD_WEBHOOK_URL_2 }}
         CHECK_INTERVAL_MINUTES: 5
       run: |
         python main.py check
 
-    - name: Upload storage file
-      uses: actions/upload-artifact@v4
+    - name: Commit updated storage file
       if: always()
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add seen_posts.json
+        git diff --staged --quiet || git commit -m "Update seen posts [skip ci]"
+
+    - name: Push changes
+      if: always()
+      uses: ad-m/github-push-action@master
       with:
-        name: seen-posts-storage
-        path: seen_posts.json
-        retention-days: 30
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
