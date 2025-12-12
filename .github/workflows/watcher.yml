@@ -11,6 +11,9 @@ on:
       - '**.py'
       - '.github/workflows/watcher.yml'
 
+permissions:
+  contents: write
+
 jobs:
   check-updates:
     runs-on: ubuntu-latest
